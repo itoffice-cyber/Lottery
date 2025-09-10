@@ -1,0 +1,243 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fun Lottery Game 🎲</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      background: linear-gradient(135deg, #ffecd2, #fcb69f);
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      color: #333;
+    }
+    .container {
+      max-width: 650px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+    button {
+      cursor: pointer;
+      background: #ff7e5f;
+      color: white;
+      border: none;
+    }
+    button:hover {
+      background: #eb6841;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      margin: 8px 0;
+      padding: 8px;
+      background: #f4f4f4;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .leave-btn {
+      background: #ff4b5c;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: white;
+    }
+    .leave-btn:hover {
+      background: #d9363e;
+    }
+    .winner-highlight {
+      color: #d35400;
+      font-weight: bold;
+      animation: pulse 1.2s ease forwards;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3); color: #27ae60; }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎲 Fun Lottery Game 🎲</h1>
+
+    <button onclick="enableVoice()">🔊 Enable Voice</button>
+    <button onclick="testVoice()">🔊 Test Voice</button>
+    <br><br>
+
+    <input type="text" id="playerName" placeholder="Enter your name" />
+    <button onclick="joinGame()">Join Game</button>
+
+    <h2>Players</h2>
+    <ul id="playersList"><li>None</li></ul>
+
+    <h2>Winners</h2>
+    <ul id="winnersList"><li>None</li></ul>
+
+    <button id="btn1" onclick="pickWinner(1)">🥇 Pick 1st Winner</button>
+    <button id="btn2" onclick="pickWinner(2)" disabled>🥈 Pick 2nd Winner</button>
+    <button id="btn3" onclick="pickWinner(3)" disabled>🥉 Pick Last Winner</button>
+    <button onclick="restartGame()">🔄 Restart Game</button>
+  </div>
+
+  <script>
+    let players = [];
+    let winners = [];
+    let voiceEnabled = false;
+
+    document.getElementById("playerName").addEventListener("keypress", function(event) {
+      if (event.key === "Enter") joinGame();
+    });
+
+    function joinGame() {
+      let name = document.getElementById("playerName").value.trim();
+      if (!name) return alert("Please enter a name!");
+      if (players.includes(name)) return alert("Player already joined!");
+
+      players.push(name);
+      document.getElementById("playerName").value = "";
+      updatePlayersList();
+      speak(name + " has joined the game.");
+    }
+
+    function leaveGame(name) {
+      players = players.filter(p => p !== name);
+      winners = winners.filter(w => w !== name);
+      updatePlayersList();
+      updateWinnersList();
+      speak(name + " has left the game.");
+    }
+
+    function updatePlayersList() {
+      let list = document.getElementById("playersList");
+      list.innerHTML = "";
+      if (players.length === 0) {
+        list.innerHTML = "<li>None</li>";
+        return;
+      }
+      players.forEach(p => {
+        let li = document.createElement("li");
+        li.textContent = p;
+
+        let btn = document.createElement("button");
+        btn.textContent = "Leave Game";
+        btn.className = "leave-btn";
+        btn.onclick = () => leaveGame(p);
+
+        li.appendChild(btn);
+        list.appendChild(li);
+      });
+    }
+
+    function updateWinnersList() {
+      let list = document.getElementById("winnersList");
+      list.innerHTML = "";
+      if (winners.length === 0) {
+        list.innerHTML = "<li>None</li>";
+        return;
+      }
+      winners.forEach((w, i) => {
+        let title = i === 0 ? "🥇 1st Winner" : i === 1 ? "🥈 2nd Winner" : "🥉 Last Winner";
+        let li = document.createElement("li");
+        li.innerHTML = `${title}: <span class="winner-highlight">${w}</span>`;
+        list.appendChild(li);
+      });
+    }
+
+    function pickWinner(round) {
+      if (players.length === 0) return alert("No players in the game!");
+
+      let available = players.filter(p => !winners.includes(p));
+      if (available.length === 0) return alert("No players left to win!");
+
+      let winner = available[Math.floor(Math.random() * available.length)];
+      winners.push(winner);
+      updateWinnersList();
+
+      if (round === 1) {
+        speak("Congratulations! The first winner is " + winner);
+        document.getElementById("btn1").disabled = true;
+        document.getElementById("btn2").disabled = false;
+      } else if (round === 2) {
+        speak("Great! The second winner is " + winner);
+        document.getElementById("btn2").disabled = true;
+        document.getElementById("btn3").disabled = false;
+      } else if (round === 3) {
+        speak("Finally! The last winner is " + winner);
+        document.getElementById("btn3").disabled = true;
+        setTimeout(() => speak("The game is over."), 2500);
+      }
+    }
+
+    function restartGame() {
+      players = [];
+      winners = [];
+      updatePlayersList();
+      updateWinnersList();
+      document.getElementById("btn1").disabled = false;
+      document.getElementById("btn2").disabled = true;
+      document.getElementById("btn3").disabled = true;
+    }
+
+    function enableVoice() {
+      voiceEnabled = true;
+      alert("Voice enabled!");
+    }
+
+    function testVoice() {
+      if (voiceEnabled) speak("Voice test successful. Ready to announce winners!");
+      else alert("Please enable voice first.");
+    }
+
+    function speak(text) {
+      if (!voiceEnabled) return;
+
+      let utterance = new SpeechSynthesisUtterance(text);
+
+      // 🌸 Make smoother and thinner
+      utterance.lang = "en-US";
+      utterance.rate = 0.8;   // slower = smoother
+      utterance.pitch = 1.6;  // higher = thinner
+
+      let voices = speechSynthesis.getVoices();
+      let femaleVoice = voices.find(v =>
+        v.name.toLowerCase().includes("female") ||
+        v.name.toLowerCase().includes("woman") ||
+        v.name.toLowerCase().includes("zira") ||
+        v.name.toLowerCase().includes("susan") ||
+        v.name.toLowerCase().includes("samantha")
+      );
+
+      if (femaleVoice) {
+        utterance.voice = femaleVoice;
+      } else if (voices.length > 0) {
+        utterance.voice = voices[0]; // fallback
+      }
+
+      speechSynthesis.speak(utterance);
+    }
+
+    window.speechSynthesis.onvoiceschanged = () => {};
+  </script>
+</body>
+</html>
+
